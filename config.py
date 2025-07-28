@@ -1,0 +1,3 @@
+BOT_TOKEN = "8440982866:AAFbKJq2sXl0bMTb-KNtcW5uIO70imkFsmE"
+CHANNEL_USERNAME = "@trghfssh"
+OPENAI_API_KEY = "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"
