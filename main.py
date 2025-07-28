@@ -1,11 +1,11 @@
 import asyncio
 import os
 import schedule
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 from config import BOT_TOKEN, CHANNEL_USERNAME
+from funnel import start, button_callback
 from gpt import generate_post
 from media_manager import get_random_media
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-from funnel import start, button_callback
 
 async def post_to_channel(app):
     try:
@@ -26,12 +26,12 @@ async def post_to_channel(app):
         else:
             await bot.send_message(chat_id=CHANNEL_USERNAME, text=message)
 
-        print("Пост отправлен!")
+        print("✅ Пост отправлен!")
 
     except Exception as e:
-        print("Ошибка при отправке:", e)
+        print("❌ Ошибка при отправке:", e)
 
-async def scheduler_loop(app):
+async def scheduler(app):
     async def job():
         await post_to_channel(app)
 
@@ -47,16 +47,11 @@ async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
 
-    await app.initialize()
-    await app.start()
-    asyncio.create_task(scheduler_loop(app))
+    # запускаем планировщик параллельно
+    asyncio.create_task(scheduler(app))
 
-    # запускаем обновления Telegram
-    await app.updater.start_polling()
-    await app.updater.idle()
-
-    await app.stop()
-    await app.shutdown()
+    # запускаем Telegram
+    await app.run_polling()
 
 if __name__ == "__main__":
     asyncio.run(main())
