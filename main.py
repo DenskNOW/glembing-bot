@@ -1,5 +1,4 @@
 print("🚀 Запуск Telegram-бота...")
-
 import asyncio
 import os
 import schedule
@@ -43,16 +42,20 @@ async def scheduler_loop(app):
         schedule.run_pending()
         await asyncio.sleep(1)
 
-# === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
-async def main():
+# === Только эта функция запуска ===
+def start_bot():
+    loop = asyncio.get_event_loop()
     app = Application.builder().token(BOT_TOKEN).build()
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
 
-    asyncio.create_task(scheduler_loop(app))
+    loop.create_task(scheduler_loop(app))  # планировщик отдельно
+    loop.run_until_complete(app.initialize())
+    loop.run_until_complete(app.start())
+    print("✅ Бот запущен!")
+    loop.run_until_complete(app.updater.start_polling())
+    loop.run_forever()
 
-    await app.run_polling()  # БЕЗ asyncio.gather()
-
-# Точка входа
 if __name__ == "__main__":
-    asyncio.run(main())
+    start_bot()
