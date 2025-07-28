@@ -1,3 +1,4 @@
+print("🚀 Запуск Telegram-бота...")
 import asyncio
 import os
 import schedule
