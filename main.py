@@ -1,53 +1,56 @@
 import asyncio
 import os
-import time
 import schedule
-from telegram import Bot
 from config import BOT_TOKEN, CHANNEL_USERNAME
 from gpt import generate_post
 from media_manager import get_random_media
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 from funnel import start, button_callback
 
-bot = Bot(token=BOT_TOKEN)
-
-def post_to_channel_sync():
+async def post_to_channel(app):
     try:
         message = generate_post()
         media_path = get_random_media()
+        bot = app.bot
 
         if media_path:
             ext = os.path.splitext(media_path)[-1].lower()
             if ext in [".jpg", ".jpeg", ".png"]:
-                bot.send_photo(chat_id=CHANNEL_USERNAME, photo=open(media_path, "rb"), caption=message)
+                with open(media_path, "rb") as photo:
+                    await bot.send_photo(chat_id=CHANNEL_USERNAME, photo=photo, caption=message)
             elif ext in [".mp4", ".mov"]:
-                bot.send_video(chat_id=CHANNEL_USERNAME, video=open(media_path, "rb"), caption=message)
+                with open(media_path, "rb") as video:
+                    await bot.send_video(chat_id=CHANNEL_USERNAME, video=video, caption=message)
             else:
-                bot.send_message(chat_id=CHANNEL_USERNAME, text=message)
+                await bot.send_message(chat_id=CHANNEL_USERNAME, text=message)
         else:
-            bot.send_message(chat_id=CHANNEL_USERNAME, text=message)
+            await bot.send_message(chat_id=CHANNEL_USERNAME, text=message)
 
         print("Пост отправлен!")
 
     except Exception as e:
         print("Ошибка при отправке:", e)
 
-# Планировщик будет работать в отдельной async-задаче
-async def scheduler_loop():
-    schedule.every().day.at("10:00").do(post_to_channel_sync)
+async def scheduler_loop(app):
+    async def job():
+        await post_to_channel(app)
+
+    schedule.every().day.at("10:00").do(lambda: asyncio.create_task(job()))
+
     while True:
         schedule.run_pending()
         await asyncio.sleep(1)
 
 async def main():
     app = Application.builder().token(BOT_TOKEN).build()
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
 
-    # Запуск Telegram-поллинга и планировщика одновременно
+    # Запуск Telegram и планировщика
     await asyncio.gather(
         app.run_polling(),
-        scheduler_loop()
+        scheduler_loop(app)
     )
 
 if __name__ == "__main__":
