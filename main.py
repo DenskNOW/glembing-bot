@@ -41,17 +41,17 @@ async def scheduler(app):
         schedule.run_pending()
         await asyncio.sleep(1)
 
-async def main():
+def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
 
-    # запускаем планировщик параллельно
+    # Запускаем планировщик в фоне
     asyncio.create_task(scheduler(app))
 
-    # запускаем Telegram
-    await app.run_polling()
+    # Запускаем Telegram поллинг
+    app.run_polling()  # ❗ без await и без asyncio.run
 
 if __name__ == "__main__":
     asyncio.run(main())
