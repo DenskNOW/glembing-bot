@@ -1,7 +1,8 @@
-from telegram import Bot
-import schedule
-import time
+import asyncio
 import os
+import time
+import schedule
+from telegram import Bot
 from config import BOT_TOKEN, CHANNEL_USERNAME
 from gpt import generate_post
 from media_manager import get_random_media
@@ -10,7 +11,7 @@ from funnel import start, button_callback
 
 bot = Bot(token=BOT_TOKEN)
 
-def post_to_channel():
+def post_to_channel_sync():
     try:
         message = generate_post()
         media_path = get_random_media()
@@ -31,19 +32,23 @@ def post_to_channel():
     except Exception as e:
         print("Ошибка при отправке:", e)
 
-schedule.every().day.at("10:00").do(post_to_channel)
+# Планировщик будет работать в отдельной async-задаче
+async def scheduler_loop():
+    schedule.every().day.at("10:00").do(post_to_channel_sync)
+    while True:
+        schedule.run_pending()
+        await asyncio.sleep(1)
 
-def run_bot():
+async def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
-    app.run_polling()
 
-import threading
+    # Запуск Telegram-поллинга и планировщика одновременно
+    await asyncio.gather(
+        app.run_polling(),
+        scheduler_loop()
+    )
 
 if __name__ == "__main__":
-    threading.Thread(target=run_bot).start()
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    asyncio.run(main())
