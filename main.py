@@ -31,4 +31,13 @@ async def post_to_channel(app):
     except Exception as e:
         print("❌ Ошибка при отправке:", e)
 
-async def sched
+async def scheduler_loop(app):
+    async def job():
+        await post_to_channel(app)
+
+    schedule.every().day.at("10:00").do(lambda: asyncio.create_task(job()))
+
+    while True:
+        schedule.run_pending()
+        await asyncio.sleep(1)
+
