@@ -1,4 +1,5 @@
 print("🚀 Запуск Telegram-бота...")
+
 import asyncio
 import os
 import schedule
@@ -41,17 +42,17 @@ async def scheduler_loop(app):
     while True:
         schedule.run_pending()
         await asyncio.sleep(1)
+
+# === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
 async def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
 
-    # Параллельный запуск Telegram и планировщика
-    await asyncio.gather(
-        app.run_polling(),
-        scheduler_loop(app)
-    )
+    asyncio.create_task(scheduler_loop(app))
 
+    await app.run_polling()  # БЕЗ asyncio.gather()
+
+# Точка входа
 if __name__ == "__main__":
     asyncio.run(main())
-
