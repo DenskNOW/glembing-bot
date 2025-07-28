@@ -47,11 +47,16 @@ async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
 
-    # Запуск Telegram и планировщика
-    await asyncio.gather(
-        app.run_polling(),
-        scheduler_loop(app)
-    )
+    await app.initialize()
+    await app.start()
+    asyncio.create_task(scheduler_loop(app))
+
+    # запускаем обновления Telegram
+    await app.updater.start_polling()
+    await app.updater.idle()
+
+    await app.stop()
+    await app.shutdown()
 
 if __name__ == "__main__":
     asyncio.run(main())
