@@ -44,18 +44,16 @@ async def scheduler_loop(app):
 
 # === Только эта функция запуска ===
 def start_bot():
-    loop = asyncio.get_event_loop()
-    app = Application.builder().token(BOT_TOKEN).build()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
+    app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
 
-    loop.create_task(scheduler_loop(app))  # планировщик отдельно
+    loop.create_task(scheduler_loop(app))
     loop.run_until_complete(app.initialize())
     loop.run_until_complete(app.start())
     print("✅ Бот запущен!")
     loop.run_until_complete(app.updater.start_polling())
     loop.run_forever()
-
-if __name__ == "__main__":
-    start_bot()
